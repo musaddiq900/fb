@@ -24,6 +24,8 @@ import database as db
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
+port = int(os.environ.get("PORT", 5000))
+host = "0.0.0.0"
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Global state for current job
@@ -513,5 +515,6 @@ if __name__ == '__main__':
     print("Open your browser and go to: http://localhost:5000")
 
     socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)
+
 
 
