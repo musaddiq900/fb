@@ -512,5 +512,6 @@ if __name__ == '__main__':
     print("Database initialized: facebook_scraper.db")
     print("Open your browser and go to: http://localhost:5000")
 
-    socketio.run(app, debug=True, port=5000)
+    socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)
+
 
