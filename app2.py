@@ -207,9 +207,9 @@ def extract_links_from_html(html_content, base_url='https://www.facebook.com'):
     # Look for Facebook links in various formats
     facebook_patterns = [
         r'https?://(www\.)?facebook\.com/[A-Za-z0-9_.-]+/?',
-        r'https?://(www\.)?facebook\.com/pages/[^/]+/\d+',
-        r'https?://(www\.)?facebook\.com/profile\.php\?id=\d+',
-        r'https?://(www\.)?facebook\.com/groups/[A-Za-z0-9_.-]+'
+        # r'https?://(www\.)?facebook\.com/pages/[^/]+/\d+',
+        r'https?://(www\.)?facebook\.com/profile\.php\?id=\d+'
+        # r'https?://(www\.)?facebook\.com/groups/[A-Za-z0-9_.-]+'
     ]
     
     for a_tag in soup.find_all('a', href=True):
@@ -481,7 +481,7 @@ def upload_html():
         return jsonify({
             'message': 'File processed successfully',
             'links_found': len(links),
-            'links': links[]  # Return first 50 links
+            'links': links  # Return first 50 links
         })
     
     return jsonify({'error': 'Invalid file format'}), 400
@@ -513,3 +513,4 @@ if __name__ == '__main__':
     print("Open your browser and go to: http://localhost:5000")
 
     socketio.run(app, debug=True, port=5000)
+
