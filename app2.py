@@ -481,7 +481,7 @@ def upload_html():
         return jsonify({
             'message': 'File processed successfully',
             'links_found': len(links),
-            'links': links[:50]  # Return first 50 links
+            'links': links[]  # Return first 50 links
         })
     
     return jsonify({'error': 'Invalid file format'}), 400
@@ -511,4 +511,5 @@ if __name__ == '__main__':
     print("Starting Facebook Page Scraper UI...")
     print("Database initialized: facebook_scraper.db")
     print("Open your browser and go to: http://localhost:5000")
+
     socketio.run(app, debug=True, port=5000)
