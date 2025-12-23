@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Page Scraper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .status-card {
+            transition: all 0.3s;
+        }
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        .data-row {
+            border-left: 4px solid #0d6efd;
+        }
+        .success-row {
+            border-left: 4px solid #198754;
+        }
+        .error-row {
+            border-left: 4px solid #dc3545;
+        }
+        #liveData {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">
+            <i class="fas fa-robot text-primary"></i> Facebook Page Scraper
+            <small class="text-muted fs-6">Database Version</small>
+        </h1>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card status-card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-database"></i> Total Data</h5>
+                        <h2 id="totalData">0</h2>
+                        <p class="card-text">Records in database</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card status-card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-check-circle"></i> Successful</h5>
+                        <h2 id="successfulJobs">0</h2>
+                        <p class="card-text">Completed jobs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card status-card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-sync-alt"></i> Active</h5>
+                        <h2 id="activeJobs">0</h2>
+                        <p class="card-text">Running jobs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card status-card bg-danger text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-times-circle"></i> Failed</h5>
+                        <h2 id="failedJobs">0</h2>
+                        <p class="card-text">Failed jobs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="fas fa-cogs"></i> Control Panel
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Job Name</label>
+                            <input type="text" class="form-control" id="jobName" placeholder="Enter job name" value="Facebook Scraping Job">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Facebook URLs (one per line)</label>
+                            <textarea class="form-control" id="urls" rows="5" placeholder="https://www.facebook.com/example"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Or upload HTML file</label>
+                            <input type="file" class="form-control" id="htmlFile" accept=".html">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Current Status</label>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Progress</span>
+                                        <span id="progressPercent">0%</span>
+                                    </div>
+                                    <div class="progress mb-3">
+                                        <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small>Processed: <span id="processedCount">0</span>/<span id="totalCount">0</span></small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small>Speed: <span id="scrapingSpeed">0</span> items/min</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small>Current URL: <span id="currentUrl" class="text-truncate d-inline-block" style="max-width: 300px;">None</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button id="startBtn" class="btn btn-success btn-lg" onclick="startScraping()">
+                                <i class="fas fa-play"></i> Start Scraping
+                            </button>
+                            <button id="stopBtn" class="btn btn-danger btn-lg" onclick="stopScraping()" disabled>
+                                <i class="fas fa-stop"></i> Stop Scraping
+                            </button>
+                            <button class="btn btn-info" onclick="exportData()">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                            <button class="btn btn-warning" onclick="clearData()">
+                                <i class="fas fa-trash"></i> Clear Database
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Data Feed -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-stream"></i> Live Data Feed
+            </div>
+            <div class="card-body">
+                <div id="liveData">
+                    <div class="text-center text-muted p-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No data yet. Start scraping to see live results.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const socket = io();
+        
+        // Socket event handlers
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+        
+        socket.on('status_update', function(data) {
+            updateStatusUI(data);
+        });
+        
+        socket.on('new_data', function(data) {
+            addLiveData(data);
+        });
+        
+        function updateStatusUI(status) {
+            $('#progressBar').css('width', status.progress + '%');
+            $('#progressPercent').text(status.progress + '%');
+            $('#processedCount').text(status.processed);
+            $('#totalCount').text(status.total);
+            $('#scrapingSpeed').text(status.speed);
+            $('#currentUrl').text(status.current_url || 'None');
+            
+            if (status.is_running) {
+                $('#startBtn').prop('disabled', true);
+                $('#stopBtn').prop('disabled', false);
+            } else {
+                $('#startBtn').prop('disabled', false);
+                $('#stopBtn').prop('disabled', true);
+            }
+        }
+        
+        function addLiveData(data) {
+            let html = `
+                <div class="card mb-2 data-row ${data.status === 'success' ? 'success-row' : 'error-row'}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>${data.name || 'No name'}</strong><br>
+                                <small class="text-muted">${data.page_link}</small>
+                            </div>
+                            <div class="col-md-3">
+                                ${data.email ? `<div><i class="fas fa-envelope"></i> ${data.email}</div>` : ''}
+                                ${data.phone ? `<div><i class="fas fa-phone"></i> ${data.phone} (${data.country || 'Unknown'})</div>` : ''}
+                            </div>
+                            <div class="col-md-3">
+                                ${data.website ? `<div><i class="fas fa-globe"></i> ${data.website}</div>` : ''}
+                                ${data.address ? `<div><i class="fas fa-map-marker-alt"></i> ${data.address}</div>` : ''}
+                            </div>
+                            <div class="col-md-3">
+                                ${data.likes ? `<div><i class="fas fa-thumbs-up"></i> ${data.likes} likes</div>` : ''}
+                                ${data.followers ? `<div><i class="fas fa-users"></i> ${data.followers} followers</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('#liveData').prepend(html);
+        }
+        
+        function startScraping() {
+            const urls = $('#urls').val().split('\n').filter(url => url.trim() !== '');
+            const jobName = $('#jobName').val();
+            
+            $.ajax({
+                url: '/api/scrape',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    links: urls,
+                    job_name: jobName
+                }),
+                success: function(response) {
+                    showAlert('Scraping started successfully!', 'success');
+                },
+                error: function(xhr) {
+                    showAlert('Error: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+                }
+            });
+        }
+        
+        function stopScraping() {
+            $.ajax({
+                url: '/api/stop',
+                method: 'POST',
+                success: function(response) {
+                    showAlert('Scraping stopped.', 'info');
+                }
+            });
+        }
+        
+        function exportData() {
+            window.open('/api/export', '_blank');
+        }
+        
+        function clearData() {
+            if (confirm('Are you sure you want to clear all data?')) {
+                $.ajax({
+                    url: '/api/clear',
+                    method: 'POST',
+                    success: function(response) {
+                        showAlert('Data cleared successfully!', 'success');
+                        $('#liveData').html(`
+                            <div class="text-center text-muted p-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>No data yet. Start scraping to see live results.</p>
+                            </div>
+                        `);
+                    },
+                    error: function(xhr) {
+                        showAlert('Error: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+                    }
+                });
+            }
+        }
+        
+        // Handle file upload
+        $('#htmlFile').on('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                $.ajax({
+                    url: '/api/upload_html',
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        $('#urls').val(response.links.join('\n'));
+                        showAlert(`Found ${response.links_found} links in HTML file`, 'success');
+                    },
+                    error: function(xhr) {
+                        showAlert('Error processing HTML file', 'danger');
+                    }
+                });
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alert = $(`
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            
+            $('.container').prepend(alert);
+            
+            setTimeout(() => {
+                alert.alert('close');
+            }, 5000);
+        }
+        
+        // Load statistics on page load
+        $(document).ready(function() {
+            loadStats();
+            setInterval(loadStats, 10000); // Refresh stats every 10 seconds
+        });
+        
+        function loadStats() {
+            $.ajax({
+                url: '/api/stats',
+                success: function(stats) {
+                    $('#totalData').text(stats.total_urls_scraped || 0);
+                    $('#successfulJobs').text(stats.completed_jobs || 0);
+                    $('#activeJobs').text(stats.running_jobs || 0);
+                    $('#failedJobs').text(stats.failed_jobs || 0);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
